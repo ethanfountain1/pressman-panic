@@ -1,0 +1,98 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Pressman Panic - Pixel Edition</title>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+  <style>
+    body { margin: 0; background: #000; }
+    canvas { display: block; margin: 0 auto; }
+  </style>
+</head>
+<body>
+
+<script>
+const config = {
+    type: Phaser.AUTO,
+    width: 768,
+    height: 768,
+    backgroundColor: '#000000',
+    physics: {
+        default: 'arcade',
+        arcade: { debug: false }
+    },
+    scene: {
+        preload,
+        create,
+        update
+    }
+};
+
+let game = new Phaser.Game(config);
+let player, cursors, sheet, carrying = false;
+let score = 0, timeLeft = 60;
+let messageText, scoreText, timerText;
+
+function preload() {
+    this.load.image('background', 'background.png');
+    this.load.image('player', 'pressman.png');
+    this.load.image('sheet', 'sheet.png');
+}
+
+function create() {
+    this.add.image(384, 384, 'background');
+
+    player = this.physics.add.sprite(100, 600, 'player');
+    player.setCollideWorldBounds(true);
+
+    sheet = this.add.image(player.x, player.y - 36, 'sheet').setVisible(false).setScale(0.5);
+
+    cursors = this.input.keyboard.createCursorKeys();
+
+    messageText = this.add.text(16, 16, 'Check Color at Front!', { fontSize: '20px', fill: '#ffff00' });
+    scoreText = this.add.text(16, 44, 'Jobs Done: 0', { fontSize: '16px', fill: '#ffffff' });
+    timerText = this.add.text(640, 16, 'Time: 60', { fontSize: '16px', fill: '#ffffff' });
+
+    this.time.addEvent({
+        delay: 1000,
+        callback: () => {
+            timeLeft--;
+            timerText.setText("Time: " + timeLeft);
+            if (timeLeft <= 0) {
+                messageText.setText("Shift Over! Jobs Done: " + score);
+                this.scene.pause();
+            }
+        },
+        loop: true
+    });
+}
+
+function update() {
+    player.setVelocity(0);
+    if (cursors.left.isDown) player.setVelocityX(-160);
+    if (cursors.right.isDown) player.setVelocityX(160);
+    if (cursors.up.isDown) player.setVelocityY(-160);
+    if (cursors.down.isDown) player.setVelocityY(160);
+
+    sheet.setVisible(carrying);
+    sheet.x = player.x;
+    sheet.y = player.y - 36;
+
+    // Simulate zones
+    if (player.x < 200 && !carrying) {
+        carrying = true;
+        messageText.setText("Color OK? Load next sheet!");
+    }
+
+    if (player.x > 600 && carrying) {
+        carrying = false;
+        score++;
+        scoreText.setText("Jobs Done: " + score);
+        messageText.setText("Pull another sample!");
+    }
+}
+</script>
+
+</body>
+</html>
